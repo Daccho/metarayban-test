@@ -1,177 +1,90 @@
-# Meta Wearables Device Access Toolkit for Android
+# metarayban-test
 
-[![Maven](https://img.shields.io/badge/Maven-0.6.0-brightgreen?logo=apachemaven)](https://github.com/orgs/facebook/packages?repo_name=meta-wearables-dat-android)
-[![Docs](https://img.shields.io/badge/API_Reference-0.6-blue?logo=meta)](https://wearables.developer.meta.com/docs/reference/android/dat/0.6)
+Meta Ray-Ban スマートグラス越しの視界を **Gemini** で解説してくれる Android アプリ。
 
-The Meta Wearables Device Access Toolkit enables developers to utilize Meta's AI glasses to build hands-free wearable experiences into their mobile applications.
-By integrating this SDK, developers can reliably connect to Meta's AI glasses and leverage capabilities like video streaming and photo capture.
+グラスのカメラで撮った写真を Gemini 2.5 Flash に送り、「いま目の前に何が見えているか」を数秒で日本語テキストで返します。メニューを読む、看板を読む、目の前の物体の説明を聞く、といった視覚アシスタント用途の最小実装。
 
-The Wearables Device Access Toolkit is in developer preview.
-Developers can access our SDK and documentation, test on supported AI glasses, and create organizations and release channels to share with test users.
+## 構成
 
-## Documentation & Community
+| モジュール | 役割 |
+|---|---|
+| [Meta Wearables DAT SDK 0.6.0](https://wearables.developer.meta.com/docs/develop/) | Ray-Ban Meta グラスとの接続・映像ストリーミング・写真キャプチャ |
+| [Gemini API](https://ai.google.dev/gemini-api/docs) (`gemini-2.5-flash`) | 撮影画像の視覚解析 → 自然言語で解説 |
+| Jetpack Compose + Android | スマホ側 UI |
 
-Find our full [developer documentation](https://wearables.developer.meta.com/docs/develop/) on the Wearables Developer Center.
+スマホ側アプリから DAT SDK でグラスに接続、ストリーミング中に Capture ボタンで写真を撮り、Describe ボタンで Gemini に解説させる、というフロー。
 
-You can find an overview of the Wearables Developer Center [here](https://wearables.developer.meta.com/).
-Create an account to stay informed of all updates, report bugs and register your organization.
-Set up a project and release channel to share your integration with test users.
+## セットアップ
 
-For help, discussion about best practices or to suggest feature ideas visit our [discussions forum](https://github.com/facebook/meta-wearables-dat-android/discussions).
+### 1. 必須クレデンシャル
 
-See the [changelog](CHANGELOG.md) for the latest updates.
+`app/local.properties` を作成し（`.gitignore` 対象）、以下を記述します:
 
-## Including the SDK in your project
+```properties
+# GitHub Packages から DAT SDK を取得するための PAT (classic, scope: read:packages)
+# https://github.com/settings/tokens
+github_token=ghp_xxxxxxxxxxxxxxxxxxxx
 
-You can add the Wearables Device Access Toolkit to your Gradle project by following the steps below.
-You will need to provide a personal access token (classic) with at least **read:packages** scope as an environment variable named `GITHUB_TOKEN` or
-by adding it as a property named `github_token` in your `local.properties` file.
-See [SDK for Android setup](https://wearables.developer.meta.com/docs/getting-started-toolkit/#sdk-for-android-setup) for more details.
+# Wearables Developer Center で登録したアプリの値
+# https://wearables.developer.meta.com/
+mwdat_application_id=xxxxxxxxxxxxxxxx
+mwdat_client_token=AR|xxxxxxxxxxxxxxxx|xxxxxxxxxxxxxxxx
 
-### 1. Add the repository definition to `settings.gradle.kts`
-
-```kotlin
-val localProperties =
-    Properties().apply {
-        val localPropertiesPath = rootDir.toPath() / "local.properties"
-        if (localPropertiesPath.exists()) {
-            load(localPropertiesPath.inputStream())
-        }
-    }
-
-dependencyResolutionManagement {
-    ...
-    repositories {
-        ...
-        maven {
-            url = uri("https://maven.pkg.github.com/facebook/meta-wearables-dat-android")
-            credentials {
-                username = "" // not needed
-                password = System.getenv("GITHUB_TOKEN") ?: localProperties.getProperty("github_token")
-            }
-        }
-    }
-}
+# Google AI Studio で発行した Gemini API キー
+# https://aistudio.google.com/apikey
+gemini_api_key=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-### 2. Declare the Wearables Device Access Toolkit artifacts in `libs.versions.toml`
-
-Check the available versions in [GitHub Packages](https://github.com/orgs/facebook/packages?repo_name=meta-wearables-dat-android).
-
-```toml
-[versions]
-mwdat = "0.6.0"
-
-[libraries]
-mwdat-core = { group = "com.meta.wearable", name = "mwdat-core", version.ref = "mwdat" }
-mwdat-camera = { group = "com.meta.wearable", name = "mwdat-camera", version.ref = "mwdat" }
-mwdat-mockdevice = { group = "com.meta.wearable", name = "mwdat-mockdevice", version.ref = "mwdat" }
-```
-
-### 3. Add the required components as dependencies in your app's `build.gradle.kts`
-
-```kotlin
-dependencies {
-    implementation(libs.mwdat.core)
-    implementation(libs.mwdat.camera)
-    implementation(libs.mwdat.mockdevice)
-}
-```
-
-## Developer Terms
-
-- By using the Wearables Device Access Toolkit, you agree to our [Meta Wearables Developer Terms](https://wearables.developer.meta.com/terms),
-  including our [Acceptable Use Policy](https://wearables.developer.meta.com/acceptable-use-policy).
-- By enabling Meta integrations, including through this SDK, Meta may collect information about how users' Meta devices communicate with your app.
-  Meta will use this information collected in accordance with our [Privacy Policy](https://www.meta.com/legal/privacy-policy/).
-- You may limit Meta's access to data from users' devices by following the instructions below.
-
-### Opting out of data collection
-
-To configure analytics settings in your Meta Wearables DAT Android app, add the following `<meta-data>` element to your
-app's `AndroidManifest.xml` file within the `<application>` element:
-
-```xml
-<meta-data
-    android:name="com.meta.wearable.mwdat.ANALYTICS_OPT_OUT"
-    android:value="true"
-    />
-```
-
-**Default behavior:** If the `ANALYTICS_OPT_OUT` metadata is missing or set to `false`, analytics are enabled
-(i.e., you are **not** opting out). Set to `true` to disable data collection.
-
-**Note:** In other words, this setting controls whether or not you're opting out of analytics:
-
-- `true` = Opt out (analytics **disabled**)
-- `false` = Opt in (analytics **enabled**)
-
-**Complete example:**
-
-```xml
-<application
-    android:name=".MyApplication"
-    android:label="MyApp"
-    android:icon="@mipmap/app_launcher">
-
-    <!-- Required: Your application ID from Wearables Developer Center -->
-    <meta-data
-        android:name="com.meta.wearable.mwdat.APPLICATION_ID"
-        android:value="your_app_id_here"
-        />
-
-    <!-- Optional: Disable analytics -->
-    <meta-data
-        android:name="com.meta.wearable.mwdat.ANALYTICS_OPT_OUT"
-        android:value="true"
-        />
-
-    <!-- Your activities and other components -->
-</application>
-```
-
-## AI-Assisted Development
-
-This repository includes config for three AI coding assistants, all generated from the same canonical SDK knowledge:
-
-| Tool | Config | How it loads |
-|------|--------|-------------|
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | `.claude/skills/*.md` | Auto-discovered when you open the project |
-| [GitHub Copilot](https://github.com/features/copilot) | `.github/copilot-instructions.md` | Auto-loaded by Copilot in VS Code |
-| [Cursor](https://cursor.sh/) | `.cursor/rules/*.mdc` | Auto-loaded with glob-based triggers |
-
-### Quick setup
-
-Install config for your preferred tool:
+### 2. ビルド
 
 ```bash
-# Install a specific tool's config
-./install-skills.sh claude    # Claude Code only
-./install-skills.sh copilot   # GitHub Copilot only
-./install-skills.sh cursor    # Cursor only
-./install-skills.sh all       # All tools
+cd app
+./gradlew assembleDebug
+# APK: app/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Or install everything remotely with a single command:
+### 3. 実機で動かす
 
-```bash
-curl -sL https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/install-skills.sh | bash
+1. Meta AI アプリで **Developer Mode** を ON
+2. このアプリをインストールして起動
+3. **Connect my glasses** でグラスを接続
+4. **Start streaming** でライブストリーム開始
+5. カメラボタンで写真キャプチャ → ダイアログの **Describe scene** で Gemini が解説を返す
+
+実機なしでも `MockDeviceKit` 画面からシミュレートできます（スマホ本体のカメラを入力にできる）。
+
+## プロジェクト構成
+
+```
+metarayban-test/
+├── app/                                    ← Android アプリ本体
+│   ├── app/src/main/java/.../
+│   │   ├── stream/           ← DAT ストリーミング + 写真キャプチャ
+│   │   ├── gemini/           ← Gemini API クライアント
+│   │   ├── ui/               ← Compose UI
+│   │   ├── wearables/        ← デバイス接続状態管理
+│   │   └── mockdevicekit/    ← 実機なしテスト用
+│   └── build.gradle.kts
+├── .claude/ .cursor/ .github/              ← AI 開発支援（DAT SDK 用スキル/ルール）
+├── AGENTS.md                               ← AI エージェント向けコンテキスト
+├── CHANGELOG.md                            ← DAT SDK 変更履歴（参考）
+└── README.md
 ```
 
-If you cloned this repository, the config is already included — no setup needed.
+## 主要ファイル
 
-### What's included
+| 用途 | ファイル |
+|---|---|
+| Gemini 呼び出し | [GeminiClient.kt](app/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/gemini/GeminiClient.kt) |
+| ストリーミング + キャプチャ | [StreamViewModel.kt](app/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/stream/StreamViewModel.kt) |
+| キャプチャ後ダイアログ | [SharePhotoDialog.kt](app/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/ui/SharePhotoDialog.kt) |
+| API キー / 認証情報の注入 | [build.gradle.kts](app/app/build.gradle.kts), [settings.gradle.kts](app/settings.gradle.kts) |
 
-- **Getting started** — SDK setup, Gradle integration, manifest configuration
-- **Camera streaming** — StreamSession, video frames, resolution/frame rate, photo capture
-- **MockDevice testing** — Test without physical glasses using MockDeviceKit
-- **Session lifecycle** — Device session states, pause/resume, availability
-- **Permissions & registration** — App registration, camera permission flows
-- **Debugging** — Common issues, Developer Mode, version compatibility
-- **Sample app guide** — Building a complete DAT app
+## ベース
 
-For API reference, point your AI tool at the [llms.txt endpoint](https://wearables.developer.meta.com/llms.txt?full=true).
+Meta 公式の [CameraAccess サンプル](https://github.com/facebook/meta-wearables-dat-android/tree/main/samples/CameraAccess) を出発点に、Gemini 統合とプロジェクト構成の整理を加えたもの。
 
-## License
+## ライセンス
 
-See the [LICENSE](LICENSE) file.
+Meta 由来のコード: [LICENSE](LICENSE)（Meta Platforms, Inc.）
+新規追加コード: 同じライセンスに従います。

@@ -28,6 +28,9 @@
     <string name ="captured_photo" description="Captured Photo">Captured Photo</string>
     <string name ="capture_photo" description="Capture Photo">Capture Photo</string>
     <string name="share" description="Share">Share</string>
+    <string name="describe" description="Describe scene with Gemini">Describe scene</string>
+    <string name="describing" description="Describing scene status">Describing…</string>
+    <string name="describe_error" description="Describe error format">Describe failed: <xliff:g id="error">%1$s</xliff:g></string>
 
     <!-- Mock Device Kit Screen -->
     <string name="mock_device_kit_title" description="Mock Device Kit Title">Mock Device Kit</string>

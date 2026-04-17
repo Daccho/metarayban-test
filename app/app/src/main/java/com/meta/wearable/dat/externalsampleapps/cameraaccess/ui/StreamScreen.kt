@@ -110,11 +110,15 @@ fun StreamScreen(
     if (streamUiState.isShareDialogVisible) {
       SharePhotoDialog(
           photo = photo,
+          description = streamUiState.description,
+          isDescribing = streamUiState.isDescribing,
+          describeError = streamUiState.describeError,
           onDismiss = { streamViewModel.hideShareDialog() },
           onShare = { bitmap ->
             streamViewModel.sharePhoto(bitmap)
             streamViewModel.hideShareDialog()
           },
+          onDescribe = { bitmap -> streamViewModel.describePhoto(bitmap) },
       )
     }
   }

@@ -42,6 +42,12 @@ android {
         localProperties.getProperty("mwdat_application_id") ?: ""
     manifestPlaceholders["mwdat_client_token"] =
         localProperties.getProperty("mwdat_client_token") ?: ""
+
+    buildConfigField(
+        "String",
+        "GEMINI_API_KEY",
+        "\"${localProperties.getProperty("gemini_api_key") ?: ""}\"",
+    )
   }
 
   buildTypes {

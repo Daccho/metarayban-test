@@ -22,4 +22,7 @@ data class StreamUiState(
     val capturedPhoto: Bitmap? = null,
     val isShareDialogVisible: Boolean = false,
     val isCapturing: Boolean = false,
+    val description: String? = null,
+    val isDescribing: Boolean = false,
+    val describeError: String? = null,
 )

@@ -42,6 +42,8 @@ import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.selectors.DeviceSelector
 import com.meta.wearable.dat.core.session.DeviceSessionState
 import com.meta.wearable.dat.core.session.Session
+import com.meta.wearable.dat.externalsampleapps.cameraaccess.BuildConfig
+import com.meta.wearable.dat.externalsampleapps.cameraaccess.gemini.GeminiClient
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.wearables.WearablesViewModel
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -64,6 +66,12 @@ class StreamViewModel(
     private const val TAG = "CameraAccess:StreamViewModel"
     private val INITIAL_STATE = StreamUiState()
     private val SESSION_TERMINAL_STATES = setOf(StreamSessionState.CLOSED)
+    private const val DESCRIBE_PROMPT =
+        "You are a helpful visual assistant for a Meta Ray-Ban glasses wearer. " +
+            "Describe what is visible in this first-person photo in 2-3 concise sentences. " +
+            "Call out notable objects, text, people (without identifying them), and any " +
+            "safety-relevant context. Respond in the same language as the text content " +
+            "visible in the scene; if there's no text, respond in Japanese."
   }
 
   private val deviceSelector: DeviceSelector = wearablesViewModel.deviceSelector
@@ -235,7 +243,37 @@ class StreamViewModel(
   }
 
   fun hideShareDialog() {
-    _uiState.update { it.copy(isShareDialogVisible = false) }
+    _uiState.update {
+      it.copy(
+          isShareDialogVisible = false,
+          description = null,
+          describeError = null,
+      )
+    }
+  }
+
+  fun describePhoto(bitmap: Bitmap) {
+    if (uiState.value.isDescribing) return
+    _uiState.update { it.copy(isDescribing = true, description = null, describeError = null) }
+    viewModelScope.launch {
+      GeminiClient.describe(
+              bitmap = bitmap,
+              apiKey = BuildConfig.GEMINI_API_KEY,
+              prompt = DESCRIBE_PROMPT,
+          )
+          .onSuccess { text ->
+            _uiState.update { it.copy(isDescribing = false, description = text) }
+          }
+          .onFailure { error ->
+            Log.e(TAG, "Gemini describe failed", error)
+            _uiState.update {
+              it.copy(
+                  isDescribing = false,
+                  describeError = error.message ?: "Unknown error",
+              )
+            }
+          }
+    }
   }
 
   fun sharePhoto(bitmap: Bitmap) {
